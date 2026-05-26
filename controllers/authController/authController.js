@@ -39,6 +39,26 @@ class AuthController {
       next(error);
     }
   }
+
+  static async updateProfile(req, res, next) {
+    try {
+      const user = await User.findById(req.user.id);
+      if (!user) return res.status(404).json({ success: false, message: 'Người dùng không tồn tại' });
+
+      if (req.body.email && req.body.email !== user.email) {
+        const existing = await User.findByEmail(req.body.email);
+        if (existing && existing.id !== user.id) {
+          return res.status(400).json({ success: false, message: 'Email đã được sử dụng bởi người dùng khác' });
+        }
+      }
+
+      await user.update(req.body);
+      const updated = await User.findById(req.user.id);
+      res.json({ success: true, message: 'Cập nhật profile thành công', data: { user: updated.toJSON() } });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = AuthController;
