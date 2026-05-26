@@ -21,12 +21,20 @@ class AuthController {
       const { email, password } = req.body;
       const user = await User.findByEmail(email);
       if (!user) return res.status(401).json({ success: false, message: 'Email hoặc mật khẩu không đúng' });
-
       const isValidPassword = await user.validatePassword(password);
       if (!isValidPassword) return res.status(401).json({ success: false, message: 'Email hoặc mật khẩu không đúng' });
-
       const token = generateToken(user.id);
       res.json({ success: true, message: 'Đăng nhập thành công', data: { user: user.toJSON(), token } });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getProfile(req, res, next) {
+    try {
+      const user = await User.findById(req.user.id);
+      if (!user) return res.status(404).json({ success: false, message: 'Người dùng không tồn tại' });
+      res.json({ success: true, data: { user: user.toJSON() } });
     } catch (error) {
       next(error);
     }
