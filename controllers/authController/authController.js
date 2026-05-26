@@ -1,5 +1,6 @@
 ﻿const User = require('../../models/userModel/User');
 const { generateToken } = require('../../middleware/auth');
+const bcrypt = require('bcryptjs');
 
 class AuthController {
   static async register(req, res, next) {
@@ -55,6 +56,25 @@ class AuthController {
       await user.update(req.body);
       const updated = await User.findById(req.user.id);
       res.json({ success: true, message: 'Cập nhật profile thành công', data: { user: updated.toJSON() } });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async changePassword(req, res, next) {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      const user = await User.findById(req.user.id);
+      if (!user) return res.status(404).json({ success: false, message: 'Người dùng không tồn tại' });
+
+      const ok = await user.validatePassword(currentPassword);
+      if (!ok) return res.status(400).json({ success: false, message: 'Mật khẩu hiện tại không đúng' });
+
+      const rounds = parseInt(process.env.BCRYPT_ROUNDS || '10', 10);
+      const hashedPassword = await bcrypt.hash(newPassword, rounds);
+      await user.update({ password: hashedPassword });
+
+      res.json({ success: true, message: 'Đổi mật khẩu thành công' });
     } catch (error) {
       next(error);
     }
