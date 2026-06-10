@@ -1,0 +1,95 @@
+const express = require('express');
+const db = require('../config/db');
+const { authenticateToken } = require('../middleware/auth');
+
+const router = express.Router();
+
+router.get('/my', authenticateToken, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const [rows] = await db.execute(
+      `SELECT
+         w.id,
+         w.name,
+         w.description,
+         w.owner_id,
+         w.created_at,
+         wm.role
+       FROM workspaces w
+       LEFT JOIN workspace_members wm
+         ON wm.workspace_id = w.id AND wm.user_id = ?
+       WHERE w.owner_id = ?
+          OR wm.user_id IS NOT NULL
+       ORDER BY w.created_at DESC`,
+      [userId, userId]
+    );
+
+    res.json({
+      success: true,
+      data: rows
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/:id', authenticateToken, async (req, res, next) => {
+  try {
+    const workspaceId = req.params.id;
+    const userId = req.user.id;
+
+    const [workspaceRows] = await db.execute(
+      `SELECT
+         w.id,
+         w.name,
+         w.description,
+         w.owner_id,
+         w.created_at,
+         wm.role
+       FROM workspaces w
+       LEFT JOIN workspace_members wm
+         ON wm.workspace_id = w.id AND wm.user_id = ?
+       WHERE w.id = ?
+         AND (w.owner_id = ? OR wm.user_id IS NOT NULL)
+       LIMIT 1`,
+      [userId, workspaceId, userId]
+    );
+
+    if (workspaceRows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Workspace not found'
+      });
+    }
+
+    const [memberRows] = await db.execute(
+      `SELECT wm.id, wm.user_id, wm.role, wm.joined_at, u.username, u.email, u.avatar
+       FROM workspace_members wm
+       JOIN users u ON u.id = wm.user_id
+       WHERE wm.workspace_id = ?
+       ORDER BY wm.joined_at ASC`,
+      [workspaceId]
+    );
+
+    const [projectRows] = await db.execute(
+      `SELECT id, name, description, owner_id, status, start_date, end_date, created_at
+       FROM prj
+       WHERE workspace_id = ?
+       ORDER BY created_at DESC`,
+      [workspaceId]
+    );
+
+    res.json({
+      success: true,
+      data: {
+        workspace: workspaceRows[0],
+        members: memberRows,
+        projects: projectRows
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+module.exports = router;
