@@ -7,22 +7,52 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
+const fs = require('fs');
 const path = require('path');
-const { initializeSocket } = require('./socket/socketServer');
 
-const authRoutes = require('./routes/authRoutes');
-const projectRoutes = require('./routes/projectRoutes');
-const taskRoutes = require('./routes/taskRoutes');
-const taskAssignmentRoutes = require('./routes/taskAssignmentRoutes');
-const userRoutes = require('./routes/userRoutes');
-const memberRoutes = require('./routes/memberRoutes');
-const commentRoutes = require('./routes/commentRoutes');
-const projectCommentRoutes = require('./routes/projectCommentRoutes');
-const notificationRoutes = require('./routes/notificationRoutes');
-const reportRoutes = require('./routes/reportRoutes');
-const aiRoutes = require('./routes/aiRoutes');
-const workspaceRoutes = require('./routes/workspaceRoutes');
-const adminRoutes = require('./routes/adminRoutes');
+const loadOptionalRoute = (relativePath) => {
+  const absolutePath = path.join(__dirname, relativePath);
+
+  if (!fs.existsSync(absolutePath)) {
+    console.warn(`[WARN] Missing route file: ${relativePath}. Using empty router.`);
+    return express.Router();
+  }
+
+  return require(`./${relativePath.replace(/\\/g, '/')}`);
+};
+
+const loadSocketInitializer = () => {
+  const relativePath = 'socket/socketServer.js';
+  const absolutePath = path.join(__dirname, relativePath);
+
+  if (!fs.existsSync(absolutePath)) {
+    console.warn(`[WARN] Missing socket server file: ${relativePath}. Socket disabled.`);
+    return () => {};
+  }
+
+  const socketModule = require('./socket/socketServer');
+  if (typeof socketModule.initializeSocket !== 'function') {
+    console.warn('[WARN] socket/socketServer.js does not export initializeSocket(). Socket disabled.');
+    return () => {};
+  }
+
+  return socketModule.initializeSocket;
+};
+
+const initializeSocket = loadSocketInitializer();
+const authRoutes = loadOptionalRoute('routes/authRoutes.js');
+const projectRoutes = loadOptionalRoute('routes/projectRoutes.js');
+const taskRoutes = loadOptionalRoute('routes/taskRoutes.js');
+const taskAssignmentRoutes = loadOptionalRoute('routes/taskAssignmentRoutes.js');
+const userRoutes = loadOptionalRoute('routes/userRoutes.js');
+const memberRoutes = loadOptionalRoute('routes/memberRoutes.js');
+const commentRoutes = loadOptionalRoute('routes/commentRoutes.js');
+const projectCommentRoutes = loadOptionalRoute('routes/projectCommentRoutes.js');
+const notificationRoutes = loadOptionalRoute('routes/notificationRoutes.js');
+const reportRoutes = loadOptionalRoute('routes/reportRoutes.js');
+const aiRoutes = loadOptionalRoute('routes/aiRoutes.js');
+const workspaceRoutes = loadOptionalRoute('routes/workspaceRoutes.js');
+const adminRoutes = loadOptionalRoute('routes/adminRoutes.js');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
