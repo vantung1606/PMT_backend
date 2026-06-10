@@ -1,4 +1,4 @@
-const User = require('../../models/userModel/User');
+﻿const User = require('../../models/userModel/User');
 const { generateToken } = require('../../middleware/auth');
 
 class AuthController {
@@ -15,12 +15,12 @@ class AuthController {
                 role: effectiveRole
             });
 
-            // T?o JWT token d? user c� th? dang nh?p ngay
+            // Tạo JWT token để user có thể đăng nhập ngay
             const token = generateToken(user.id);
 
             res.status(201).json({
                 success: true,
-                message: '�ang k� th�nh c�ng',
+                message: 'Đăng ký thành công',
                 data: {
                     user: user.toJSON(),
                     token
@@ -32,7 +32,7 @@ class AuthController {
                 console.error('Register error:', error);
             }
             
-            if (error.message === 'Email d� du?c s? d?ng') {
+            if (error.message === 'Email đã được sử dụng') {
                 return res.status(400).json({
                     success: false,
                     message: error.message
@@ -50,7 +50,7 @@ class AuthController {
             if (!email || !password) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Vui l�ng nh?p email v� m?t kh?u'
+                    message: 'Vui lòng nhập email và mật khẩu'
                 });
             }
 
@@ -58,7 +58,7 @@ class AuthController {
             if (!user) {
                 return res.status(401).json({
                     success: false,
-                    message: 'Email ho?c m?t kh?u kh�ng d�ng'
+                    message: 'Email hoặc mật khẩu không đúng'
                 });
             }
 
@@ -66,7 +66,7 @@ class AuthController {
             if (!isValidPassword) {
                 return res.status(401).json({
                     success: false,
-                    message: 'Email ho?c m?t kh?u kh�ng d�ng'
+                    message: 'Email hoặc mật khẩu không đúng'
                 });
             }
 
@@ -74,7 +74,7 @@ class AuthController {
 
             res.json({
                 success: true,
-                message: '�ang nh?p th�nh c�ng',
+                message: 'Đăng nhập thành công',
                 data: {
                     user: user.toJSON(),
                     token
@@ -95,7 +95,7 @@ class AuthController {
             if (!user) {
                 return res.status(404).json({
                     success: false,
-                    message: 'Ngu?i d�ng kh�ng t?n t?i'
+                    message: 'Người dùng không tồn tại'
                 });
             }
 
@@ -135,7 +135,7 @@ class AuthController {
             if (!currentUser) {
                 return res.status(404).json({
                     success: false,
-                    message: 'Ngu?i d�ng kh�ng t?n t?i'
+                    message: 'Người dùng không tồn tại'
                 });
             }
 
@@ -144,7 +144,7 @@ class AuthController {
                 if (existingUser && existingUser.id !== userId) {
                     return res.status(400).json({
                         success: false,
-                        message: 'Email d� du?c s? d?ng b?i ngu?i d�ng kh�c'
+                        message: 'Email đã được sử dụng b?i ngu?i dùng khác'
                     });
                 }
             }
@@ -173,7 +173,7 @@ class AuthController {
 
             res.json({
                 success: true,
-                message: 'C?p nh?t profile th�nh c�ng',
+                message: 'Cập nhật profile thành công',
                 data: {
                     user: updatedUser.toJSON()
                 }
@@ -187,7 +187,7 @@ class AuthController {
             if (error.code === 'ER_DUP_ENTRY') {
                 return res.status(400).json({
                     success: false,
-                    message: 'Email d� du?c s? d?ng b?i ngu?i d�ng kh�c'
+                    message: 'Email đã được sử dụng b?i ngu?i dùng khác'
                 });
             }
             
@@ -202,14 +202,14 @@ class AuthController {
             if (!currentPassword || !newPassword) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Vui l�ng nh?p m?t kh?u hi?n t?i v� m?t kh?u m?i'
+                    message: 'Vui lòng nhập mật khẩu hiện tại và mật khẩu mới'
                 });
             }
 
             if (newPassword.length < 6) {
                 return res.status(400).json({
                     success: false,
-                    message: 'M?t kh?u m?i ph?i c� �t nh?t 6 k� t?'
+                    message: 'Mật khẩu mới phải có ít nhất 6 ký tự'
                 });
             }
 
@@ -219,7 +219,7 @@ class AuthController {
             if (!isValidPassword) {
                 return res.status(400).json({
                     success: false,
-                    message: 'M?t kh?u hi?n t?i kh�ng d�ng'
+                    message: 'Mật khẩu hiện tại không đúng'
                 });
             }
 
@@ -231,7 +231,7 @@ class AuthController {
 
             res.json({
                 success: true,
-                message: '�?i m?t kh?u th�nh c�ng'
+                message: 'Đổi mật khẩu thành công'
             });
 
         } catch (error) {
@@ -247,7 +247,7 @@ class AuthController {
             if (!req.file) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Kh�ng c� file du?c upload'
+                    message: 'Không có file được upload'
                 });
             }
 
@@ -257,7 +257,7 @@ class AuthController {
             if (!user) {
                 return res.status(404).json({
                     success: false,
-                    message: 'Ngu?i d�ng kh�ng t?n t?i'
+                    message: 'Người dùng không tồn tại'
                 });
             }
 
@@ -268,7 +268,7 @@ class AuthController {
                 if (fs.existsSync(oldAvatarPath)) {
                     fs.unlinkSync(oldAvatarPath);
                     if (process.env.NODE_ENV === 'development') {
-                        console.log('�� x�a avatar cu:', user.avatar);
+                        console.log('Đã xóa avatar cũ:', user.avatar);
                     }
                 }
             }
@@ -284,12 +284,12 @@ class AuthController {
                 }
                 return res.status(400).json({
                     success: false,
-                    message: 'T�n file kh�ng h?p l?'
+                    message: 'Tên file không hợp lệ'
                 });
             }
             
             if (process.env.NODE_ENV === 'development') {
-                console.log('�ang luu avatar:', {
+                console.log('Đang lưu avatar:', {
                     userId: userId,
                     avatarPath: avatarPath,
                     fileSize: req.file.size,
@@ -299,14 +299,14 @@ class AuthController {
             }
 
             if (process.env.NODE_ENV === 'development') {
-                console.log('Tru?c khi update - user.avatar:', user.avatar);
-                console.log('avatarPath s? du?c luu:', avatarPath);
+                console.log('Trước khi update - user.avatar:', user.avatar);
+                console.log('avatarPath sẽ được lưu:', avatarPath);
                 console.log('avatarPath type:', typeof avatarPath);
             }
 
             const avatarValue = String(avatarPath).trim();
             if (!avatarValue) {
-                throw new Error('�u?ng d?n avatar kh�ng h?p l?');
+                throw new Error('Đường dẫn avatar không hợp lệ');
             }
             
             await user.update({ avatar: avatarValue });
@@ -318,11 +318,11 @@ class AuthController {
             const updatedUser = await User.findById(userId);
             
             if (!updatedUser) {
-                throw new Error('Kh�ng th? l?y th�ng tin user sau khi c?p nh?t');
+                throw new Error('Không thể lấy thông tin user sau khi cập nhật');
             }
 
             if (process.env.NODE_ENV === 'development') {
-                console.log('Sau khi query l?i t? database:', {
+                console.log('Sau khi query lại từ database:', {
                     userId: userId,
                     avatarInDB: updatedUser.avatar,
                     expectedAvatar: avatarPath,
@@ -331,20 +331,20 @@ class AuthController {
 
                 const db = require('../../config/db');
                 const [rows] = await db.execute('SELECT avatar FROM users WHERE id = ?', [userId]);
-                console.log('Query tr?c ti?p t? database:', rows[0]);
+                console.log('Query trực tiếp từ database:', rows[0]);
             }
 
             if (updatedUser.avatar !== avatarPath) {
-                console.error('L?i: Avatar kh�ng kh?p!', {
+                console.error('Lỗi: Avatar không khớp!', {
                     expected: avatarPath,
                     actual: updatedUser.avatar
                 });
-                throw new Error(`Avatar kh�ng du?c luu d�ng v�o database. Expected: ${avatarPath}, Actual: ${updatedUser.avatar}`);
+                throw new Error(`Avatar không được lưu đúng vào database. Expected: ${avatarPath}, Actual: ${updatedUser.avatar}`);
             }
 
             res.json({
                 success: true,
-                message: 'Upload avatar th�nh c�ng v� d� luu v�o database',
+                message: 'Upload avatar thành công và đã lưu vào database',
                 data: {
                     user: updatedUser.toJSON(),
                     avatarUrl: `/uploads/avatars/${avatarPath}`
@@ -365,16 +365,16 @@ class AuthController {
                     if (fs.existsSync(filePath)) {
                         fs.unlinkSync(filePath);
                         if (process.env.NODE_ENV === 'development') {
-                            console.log('�� x�a file do l?i:', req.file.filename);
+                            console.log('Đã xóa file do lỗi:', req.file.filename);
                         }
                     }
                 } catch (deleteError) {
-                    console.error('L?i khi x�a file:', deleteError);
+                    console.error('Lỗi khi xóa file:', deleteError);
                 }
             }
 
             const statusCode = error.statusCode || 500;
-            const message = error.message || 'L?i khi upload avatar';
+            const message = error.message || 'Lỗi khi upload avatar';
             
             return res.status(statusCode).json({
                 success: false,
