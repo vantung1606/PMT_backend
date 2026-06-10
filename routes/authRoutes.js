@@ -10,11 +10,11 @@ const {
     validateChangePassword 
 } = require('../middleware/validation');
 
-// Routes không cần authentication
+// Routes kh�ng c?n authentication
 router.post('/register', validateRegister, AuthController.register);
 router.post('/login', validateLogin, AuthController.login);
 
-// Routes cần authentication
+// Routes c?n authentication
 router.get('/profile', authenticateToken, AuthController.getProfile);
 router.put('/profile', authenticateToken, validateUpdateProfile, AuthController.updateProfile);
 router.post('/profile/avatar', authenticateToken, upload.single('avatar'), AuthController.uploadAvatar);

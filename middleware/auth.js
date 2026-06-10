@@ -1,12 +1,12 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModel/User');
 
-// Cache tạm thời để tránh truy vấn database nhiều lần cho cùng user
+// Cache t?m th?i d? tr�nh truy v?n database nhi?u l?n cho c�ng user
 const userCache = new Map();
 const CACHE_TTL = parseInt(process.env.AUTH_CACHE_TTL || '300000', 10);
 const CACHE_MAX_SIZE = parseInt(process.env.AUTH_CACHE_MAX_SIZE || '100', 10); 
 
-// Xác thực JWT token từ header Authorization
+// X�c th?c JWT token t? header Authorization
 const authenticateToken = async (req, res, next) => {
     try {
         const authHeader = req.headers['authorization'];
@@ -15,7 +15,7 @@ const authenticateToken = async (req, res, next) => {
         if (!token) {
             return res.status(401).json({
                 success: false,
-                message: 'Token truy cập không được cung cấp'
+                message: 'Token truy c?p kh�ng du?c cung c?p'
             });
         }
 
@@ -42,7 +42,7 @@ const authenticateToken = async (req, res, next) => {
         if (!user) {
             return res.status(401).json({
                 success: false,
-                message: 'Người dùng không tồn tại'
+                message: 'Ngu?i d�ng kh�ng t?n t?i'
             });
         }
 
@@ -66,18 +66,18 @@ const authenticateToken = async (req, res, next) => {
         if (error.name === 'TokenExpiredError') {
             return res.status(401).json({
                 success: false,
-                message: 'Token đã hết hạn'
+                message: 'Token d� h?t h?n'
             });
         }
         if (error.name === 'JsonWebTokenError') {
             return res.status(401).json({
                 success: false,
-                message: 'Token không hợp lệ'
+                message: 'Token kh�ng h?p l?'
             });
         }
         return res.status(403).json({
             success: false,
-            message: 'Token không hợp lệ hoặc đã hết hạn'
+            message: 'Token kh�ng h?p l? ho?c d� h?t h?n'
         });
     }
 };
@@ -89,19 +89,19 @@ const getCurrentRole = (req) => {
     return req.user?.role || null;
 };
 
-// Kiểm tra quyền admin cấp toàn hệ thống
+// Ki?m tra quy?n admin c?p to�n h? th?ng
 const requireAdmin = (req, res, next) => {
     if (req.workspaceRole) {
         return res.status(403).json({
             success: false,
-            message: 'Tính năng này chỉ dành cho Admin ở global scope'
+            message: 'T�nh nang n�y ch? d�nh cho Admin ? global scope'
         });
     }
     const userRole = String(req.user.role).toLowerCase();
     if (userRole !== 'ad' && userRole !== 'admin') {
         return res.status(403).json({
             success: false,
-            message: 'Chỉ admin mới có quyền truy cập'
+            message: 'Ch? admin m?i c� quy?n truy c?p'
         });
     }
     next();
@@ -113,56 +113,56 @@ const requirePMOrAdmin = (req, res, next) => {
         if (currentRole !== 'pm') {
             return res.status(403).json({
                 success: false,
-                message: 'Chỉ Project Manager trong workspace mới có quyền truy cập'
+                message: 'Ch? Project Manager trong workspace m?i c� quy?n truy c?p'
             });
         }
     } else {
         if (!['ad', 'pm'].includes(currentRole)) {
             return res.status(403).json({
                 success: false,
-                message: 'Chỉ Project Manager hoặc Admin mới có quyền truy cập'
+                message: 'Ch? Project Manager ho?c Admin m?i c� quy?n truy c?p'
             });
         }
     }
     next();
 };
 
-// Kiểm tra quyền Team Leader trở lên (TL, PM, Admin)
+// Ki?m tra quy?n Team Leader tr? l�n (TL, PM, Admin)
 const requireLeaderOrAbove = (req, res, next) => {
     const currentRole = getCurrentRole(req);
     if (req.workspaceRole) {
         if (!['pm', 'tl'].includes(currentRole)) {
             return res.status(403).json({
                 success: false,
-                message: 'Bạn không có quyền truy cập tính năng này'
+                message: 'B?n kh�ng c� quy?n truy c?p t�nh nang n�y'
             });
         }
     } else {
         if (!['ad', 'pm', 'tl'].includes(currentRole)) {
             return res.status(403).json({
                 success: false,
-                message: 'Bạn không có quyền truy cập tính năng này'
+                message: 'B?n kh�ng c� quy?n truy c?p t�nh nang n�y'
             });
         }
     }
     next();
 };
 
-// Kiểm tra quyền xem, áp dụng cho tất cả role có trong hệ thống
+// Ki?m tra quy?n xem, �p d?ng cho t?t c? role c� trong h? th?ng
 const requireViewPermission = (req, res, next) => {
     const currentRole = getCurrentRole(req);
     if (req.workspaceRole) {
         if (!['pm', 'tl', 'mb', 'clt'].includes(currentRole)) {
             return res.status(403).json({
                 success: false,
-                message: 'Bạn không có quyền xem tính năng này'
+                message: 'B?n kh�ng c� quy?n xem t�nh nang n�y'
             });
         }
     } else {
         if (!['ad', 'pm', 'tl', 'mb'].includes(currentRole)) {
             return res.status(403).json({
                 success: false,
-                message: 'Bạn không có quyền xem tính năng này'
+                message: 'B?n kh�ng c� quy?n xem t�nh nang n�y'
             });
         }
     }
@@ -175,84 +175,84 @@ const requireEditPermission = (req, res, next) => {
         if (!['pm', 'tl'].includes(currentRole)) {
             return res.status(403).json({
                 success: false,
-                message: 'Bạn không có quyền chỉnh sửa tính năng này'
+                message: 'B?n kh�ng c� quy?n ch?nh s?a t�nh nang n�y'
             });
         }
     } else {
         if (!['ad', 'pm', 'tl'].includes(currentRole)) {
             return res.status(403).json({
                 success: false,
-                message: 'Bạn không có quyền chỉnh sửa tính năng này'
+                message: 'B?n kh�ng c� quy?n ch?nh s?a t�nh nang n�y'
             });
         }
     }
     next();
 };
 
-// Kiểm tra quyền quản lý thành viên trong project/workspace
+// Ki?m tra quy?n qu?n l� th�nh vi�n trong project/workspace
 const requireMemberManagement = (req, res, next) => {
     const currentRole = getCurrentRole(req);
     if (req.workspaceRole) {
         if (!['pm', 'tl'].includes(currentRole)) {
             return res.status(403).json({
                 success: false,
-                message: 'Chỉ Project Manager hoặc Team Leader trong workspace mới có quyền quản lý thành viên'
+                message: 'Ch? Project Manager ho?c Team Leader trong workspace m?i c� quy?n qu?n l� th�nh vi�n'
             });
         }
     } else {
         if (!['ad', 'pm', 'tl'].includes(currentRole)) {
             return res.status(403).json({
                 success: false,
-                message: 'Bạn không có quyền quản lý thành viên'
+                message: 'B?n kh�ng c� quy?n qu?n l� th�nh vi�n'
             });
         }
     }
     next();
 };
 
-// Kiểm tra quyền xem danh sách thành viên
+// Ki?m tra quy?n xem danh s�ch th�nh vi�n
 const requireViewMembers = (req, res, next) => {
     const currentRole = getCurrentRole(req);
     if (req.workspaceRole) {
         if (!['pm', 'tl', 'mb', 'clt'].includes(currentRole)) {
             return res.status(403).json({
                 success: false,
-                message: 'Bạn không có quyền xem danh sách thành viên'
+                message: 'B?n kh�ng c� quy?n xem danh s�ch th�nh vi�n'
             });
         }
     } else {
         if (!['ad', 'pm', 'tl', 'mb'].includes(currentRole)) {
             return res.status(403).json({
                 success: false,
-                message: 'Bạn không có quyền xem danh sách thành viên'
+                message: 'B?n kh�ng c� quy?n xem danh s�ch th�nh vi�n'
             });
         }
     }
     next();
 };
 
-// Kiểm tra quyền tìm kiếm thành viên (tất cả role đều có quyền)
+// Ki?m tra quy?n t�m ki?m th�nh vi�n (t?t c? role d?u c� quy?n)
 const requireSearchMembers = (req, res, next) => {
     const currentRole = getCurrentRole(req);
     if (req.workspaceRole) {
         if (!['pm', 'tl', 'mb', 'clt'].includes(currentRole)) {
             return res.status(403).json({
                 success: false,
-                message: 'Bạn không có quyền tìm kiếm thành viên'
+                message: 'B?n kh�ng c� quy?n t�m ki?m th�nh vi�n'
             });
         }
     } else {
         if (!['ad', 'pm', 'tl', 'mb'].includes(currentRole)) {
             return res.status(403).json({
                 success: false,
-                message: 'Bạn không có quyền tìm kiếm thành viên'
+                message: 'B?n kh�ng c� quy?n t�m ki?m th�nh vi�n'
             });
         }
     }
     next();
 };
 
-// Tạo JWT token chứa userId với thời gian hết hạn
+// T?o JWT token ch?a userId v?i th?i gian h?t h?n
 const generateToken = (userId) => {
     const JWT_SECRET = process.env.JWT_SECRET;
     if (!JWT_SECRET) {
