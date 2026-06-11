@@ -96,7 +96,7 @@ const getTaskProgressByProject = async (req, res, next) => {
                 p.name,
                 COUNT(t.id) as total_tasks,
                 AVG(t.progress) as avg_progress,
-                SUM(CASE WHEN t.status = 'Done' THEN 1 ELSE 0 END) as completed_tasks
+                SUM(CASE WHEN t.status = 'Completed' THEN 1 ELSE 0 END) as completed_tasks
             FROM prj p
             LEFT JOIN tasks t ON p.id = t.project_id
         `;

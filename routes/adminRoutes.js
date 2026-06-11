@@ -3,6 +3,7 @@ const db = require('../config/db');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
+const adminController = require('../controllers/adminController/adminController');
 
 router.get('/dashboard/stats', authenticateToken, async (req, res, next) => {
   try {
@@ -70,5 +71,10 @@ router.get('/dashboard/stats', authenticateToken, async (req, res, next) => {
     next(error);
   }
 });
+
+// Workspace management
+router.get('/workspaces', authenticateToken, adminController.getAllWorkspaces);
+router.get('/workspaces/:id', authenticateToken, adminController.getWorkspaceDetail);
+router.delete('/workspaces/:id', authenticateToken, adminController.deleteWorkspace);
 
 module.exports = router;

@@ -3,6 +3,7 @@ const db = require('../config/db');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
+const workspaceController = require('../controllers/workspaceController/workspaceController');
 
 router.get('/my', authenticateToken, async (req, res, next) => {
   try {
@@ -91,5 +92,12 @@ router.get('/:id', authenticateToken, async (req, res, next) => {
     next(error);
   }
 });
+
+// Create workspace
+router.post('/', authenticateToken, workspaceController.createWorkspace);
+
+// Manage members
+router.post('/:id/members', authenticateToken, workspaceController.addMember);
+router.put('/:id/members/:userId/role', authenticateToken, workspaceController.updateMemberRole);
 
 module.exports = router;
