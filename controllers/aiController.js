@@ -24,7 +24,7 @@ exports.chat = async (req, res) => {
       });
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
     
     // Format conversation history
     const historyText = messages.map(msg => `${msg.role === 'user' ? 'Người dùng' : 'Trợ lý AI'}: ${msg.content}`).join('\n');

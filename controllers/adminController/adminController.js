@@ -611,8 +611,8 @@ const getSystemInfo = async (req, res, next) => {
 
         const [tableSizes] = await db.execute(`
             SELECT 
-                table_name,
-                table_rows,
+                TABLE_NAME AS table_name,
+                TABLE_ROWS AS table_rows,
                 ROUND(((data_length + index_length) / 1024 / 1024), 2) AS size_mb
             FROM information_schema.TABLES
             WHERE table_schema = DATABASE()
@@ -634,6 +634,71 @@ const getSystemInfo = async (req, res, next) => {
     }
 };
 
+// Lấy cấu hình website (public)
+const getWebsiteSettings = async (req, res, next) => {
+    try {
+        const [settings] = await db.execute(
+            "SELECT setting_value FROM system_settings WHERE setting_key = 'website_customization'"
+        );
+        
+        let data = null;
+        if (settings.length > 0) {
+            try {
+                data = JSON.parse(settings[0].setting_value);
+            } catch (e) {
+                data = settings[0].setting_value;
+            }
+        }
+
+        res.json({
+            success: true,
+            data: data
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Cập nhật cấu hình website (admin only)
+const updateWebsiteSettings = async (req, res, next) => {
+    try {
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'Không có quyền truy cập'
+            });
+        }
+
+        const settingsValue = JSON.stringify(req.body);
+        const userId = req.user.id;
+
+        await db.execute(`
+            INSERT INTO system_settings (setting_key, setting_value, description, updated_by)
+            VALUES ('website_customization', ?, 'Cấu hình giao diện trang chủ', ?)
+            ON DUPLICATE KEY UPDATE 
+                setting_value = VALUES(setting_value),
+                updated_by = VALUES(updated_by),
+                updated_at = NOW()
+        `, [settingsValue, userId]);
+
+        try {
+            await db.execute(
+                "INSERT INTO logs (user_id, action, target_table, description) VALUES (?, 'update_settings', 'system_settings', ?)",
+                [userId, 'Cập nhật giao diện trang chủ website']
+            );
+        } catch (logError) {
+            console.error('Failed to log admin activity:', logError);
+        }
+
+        res.json({
+            success: true,
+            message: 'Đã cập nhật giao diện thành công'
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getDashboardStats,
     getAllUsers,
@@ -646,5 +711,7 @@ module.exports = {
     deleteWorkspace,
     getActivityLogs,
     getActivityStats,
-    getSystemInfo
+    getSystemInfo,
+    getWebsiteSettings,
+    updateWebsiteSettings
 };

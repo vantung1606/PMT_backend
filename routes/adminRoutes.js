@@ -77,4 +77,22 @@ router.get('/workspaces', authenticateToken, adminController.getAllWorkspaces);
 router.get('/workspaces/:id', authenticateToken, adminController.getWorkspaceDetail);
 router.delete('/workspaces/:id', authenticateToken, adminController.deleteWorkspace);
 
+// User management
+router.get('/users', authenticateToken, adminController.getAllUsers);
+router.get('/users/:id', authenticateToken, adminController.getUserDetail);
+router.put('/users/:id/role', authenticateToken, adminController.updateUserRole);
+router.put('/users/:id/status', authenticateToken, adminController.toggleUserStatus);
+router.delete('/users/:id', authenticateToken, adminController.deleteUser);
+
+// Activity logs
+router.get('/logs', authenticateToken, adminController.getActivityLogs);
+router.get('/logs/stats', authenticateToken, adminController.getActivityStats);
+
+// System Settings / Info
+router.get('/system/info', authenticateToken, adminController.getSystemInfo);
+
+// Website settings (Public GET, authenticated PUT for admin only)
+router.get('/website/settings', adminController.getWebsiteSettings);
+router.put('/website/settings', authenticateToken, adminController.updateWebsiteSettings);
+
 module.exports = router;
