@@ -8,10 +8,10 @@ const workspaceController = require('../controllers/workspaceController/workspac
 router.get('/my', authenticateToken, async (req, res, next) => {
   try {
     const userId = req.user.id;
+    const { search, sort } = req.query;
 
-    // Query 1: workspaces with counts
-    const [rows] = await db.execute(
-      `SELECT
+    let query = `
+      SELECT
          w.id,
          w.name,
          w.description,
@@ -23,11 +23,26 @@ router.get('/my', authenticateToken, async (req, res, next) => {
        FROM workspaces w
        LEFT JOIN workspace_members wm
          ON wm.workspace_id = w.id AND wm.user_id = ?
-       WHERE w.owner_id = ?
-          OR wm.user_id IS NOT NULL
-       ORDER BY w.created_at DESC`,
-      [userId, userId]
-    );
+       WHERE (w.owner_id = ? OR wm.user_id IS NOT NULL)
+    `;
+    const params = [userId, userId];
+
+    if (search && search.trim() !== '') {
+      query += ` AND (LOWER(w.name) LIKE ? OR LOWER(w.description) LIKE ?)`;
+      const searchTerm = `%${search.trim().toLowerCase()}%`;
+      params.push(searchTerm, searchTerm);
+    }
+
+    if (sort === 'name-asc') {
+      query += ` ORDER BY w.name ASC`;
+    } else if (sort === 'name-desc') {
+      query += ` ORDER BY w.name DESC`;
+    } else {
+      query += ` ORDER BY w.created_at DESC`;
+    }
+
+    // Query 1: workspaces with counts
+    const [rows] = await db.execute(query, params);
 
     if (rows.length === 0) {
       return res.json({ success: true, data: [] });
