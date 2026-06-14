@@ -111,20 +111,40 @@ class Member {
      */
     static async findAll(currentUserRole = null, workspaceId = null) {
         try {
-            let query = 'SELECT * FROM members';
+            let query = `
+                SELECT 
+                    m.*,
+                    u.id as user_id,
+                    wm.role as workspace_role,
+                    (
+                        SELECT GROUP_CONCAT(p.name SEPARATOR ', ') 
+                        FROM prj_mb pm 
+                        JOIN prj p ON pm.project_id = p.id 
+                        WHERE pm.user_id = u.id
+                    ) as projects
+                FROM members m
+                LEFT JOIN users u ON m.email = u.email
+                LEFT JOIN workspace_members wm ON u.id = wm.user_id AND wm.workspace_id = m.workspace_id
+            `;
             const params = [];
 
-            // Nếu có workspaceId -> chỉ lấy members của workspace đó
             if (workspaceId) {
-                query += ' WHERE workspace_id = ?';
+                query += ' WHERE m.workspace_id = ?';
                 params.push(workspaceId);
             }
 
-            query += ' ORDER BY created_at DESC';
+            query += ' ORDER BY m.created_at DESC';
             
             const [rows] = await db.execute(query, params);
             
-            return rows.map(row => new Member(row));
+            // Map the rows to objects, preserving the extra fields
+            return rows.map(row => {
+                const member = new Member(row);
+                member.user_id = row.user_id;
+                member.workspace_role = row.workspace_role;
+                member.projects = row.projects;
+                return member;
+            });
         } catch (error) {
             throw error;
         }
@@ -200,6 +220,9 @@ class Member {
         return {
             id: this.id,
             workspace_id: this.workspace_id,
+            user_id: this.user_id,
+            workspace_role: this.workspace_role,
+            projects: this.projects,
             name: this.name,
             email: this.email,
             date_of_birth: this.date_of_birth ? 
