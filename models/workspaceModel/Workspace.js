@@ -55,15 +55,30 @@ class Workspace {
      * 
      * Tóm tắt: Lấy toàn bộ workspace mà user này là thành viên, có thêm thông tin vai trò (role) trong workspace đó.
      */
-    static async findByUserId(userId) {
-        // Lấy danh sách workspace mà user là thành viên
-        const [rows] = await db.execute(`
+    static async findByUserId(userId, search = '', sort = 'recent') {
+        let query = `
             SELECT w.*, wm.role AS member_role
             FROM workspaces w
             INNER JOIN workspace_members wm ON wm.workspace_id = w.id
             WHERE wm.user_id = ?
-            ORDER BY w.created_at DESC
-        `, [userId]);
+        `;
+        const params = [userId];
+
+        if (search && search.trim() !== '') {
+            query += ` AND (LOWER(w.name) LIKE ? OR LOWER(w.description) LIKE ?)`;
+            const searchTerm = `%${search.trim().toLowerCase()}%`;
+            params.push(searchTerm, searchTerm);
+        }
+
+        if (sort === 'name-asc') {
+            query += ` ORDER BY w.name ASC`;
+        } else if (sort === 'name-desc') {
+            query += ` ORDER BY w.name DESC`;
+        } else {
+            query += ` ORDER BY w.created_at DESC`;
+        }
+
+        const [rows] = await db.execute(query, params);
 
         return rows.map(row => ({
             workspace: new Workspace(row),

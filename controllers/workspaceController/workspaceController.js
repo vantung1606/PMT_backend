@@ -44,7 +44,8 @@ const createWorkspace = async (req, res, next) => {
 const listMyWorkspaces = async (req, res, next) => {
     try {
         const userId = req.user.id;
-        const items = await Workspace.findByUserId(userId);
+        const { search, sort } = req.query;
+        const items = await Workspace.findByUserId(userId, search, sort);
 
         return res.json({
             success: true,
