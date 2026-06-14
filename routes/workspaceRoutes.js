@@ -8,6 +8,8 @@ const workspaceController = require('../controllers/workspaceController/workspac
 router.get('/my', authenticateToken, async (req, res, next) => {
   try {
     const userId = req.user.id;
+
+    // Query 1: workspaces with counts
     const [rows] = await db.execute(
       `SELECT
          w.id,
@@ -15,7 +17,9 @@ router.get('/my', authenticateToken, async (req, res, next) => {
          w.description,
          w.owner_id,
          w.created_at,
-         wm.role
+         wm.role,
+         (SELECT COUNT(*) FROM prj p WHERE p.workspace_id = w.id) AS project_count,
+         (SELECT COUNT(*) FROM workspace_members wm2 WHERE wm2.workspace_id = w.id) AS member_count
        FROM workspaces w
        LEFT JOIN workspace_members wm
          ON wm.workspace_id = w.id AND wm.user_id = ?
@@ -25,10 +29,37 @@ router.get('/my', authenticateToken, async (req, res, next) => {
       [userId, userId]
     );
 
-    res.json({
-      success: true,
-      data: rows
-    });
+    if (rows.length === 0) {
+      return res.json({ success: true, data: [] });
+    }
+
+    // Query 2: up to 3 member avatars per workspace
+    const wsIds = rows.map(r => r.id);
+    const placeholders = wsIds.map(() => '?').join(',');
+    const [avatarRows] = await db.execute(
+      `SELECT wm.workspace_id, u.username, u.avatar
+       FROM workspace_members wm
+       JOIN users u ON u.id = wm.user_id
+       WHERE wm.workspace_id IN (${placeholders})
+       ORDER BY wm.workspace_id, wm.joined_at ASC`,
+      wsIds
+    );
+
+    // Group avatars by workspace_id (max 3 each)
+    const avatarMap = {};
+    for (const row of avatarRows) {
+      if (!avatarMap[row.workspace_id]) avatarMap[row.workspace_id] = [];
+      if (avatarMap[row.workspace_id].length < 3) {
+        avatarMap[row.workspace_id].push({ username: row.username, avatar: row.avatar });
+      }
+    }
+
+    const data = rows.map(row => ({
+      ...row,
+      member_avatars: avatarMap[row.id] || []
+    }));
+
+    res.json({ success: true, data });
   } catch (error) {
     next(error);
   }
