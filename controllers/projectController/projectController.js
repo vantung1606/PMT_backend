@@ -8,7 +8,24 @@ const getAll = async (req, res, next) => {
 
         // Nếu có workspace context, chỉ lấy các dự án trong workspace đó
         const workspaceId = req.workspaceId || null;
-        const projects = await Project.findAll(workspaceId);
+        let projects = await Project.findAll(workspaceId);
+
+        if (projects.length > 0) {
+            const projectIds = projects.map(p => p.id);
+            const placeholders = projectIds.map(() => '?').join(',');
+            const [members] = await db.execute(`
+                SELECT pm.project_id, pm.role, u.id as user_id, u.username, u.email, u.avatar 
+                FROM prj_mb pm 
+                JOIN users u ON pm.user_id = u.id 
+                WHERE pm.project_id IN (${placeholders})
+            `, projectIds);
+            
+            projects = projects.map(p => {
+                const pMembers = members.filter(m => m.project_id === p.id);
+                return { ...p, members: pMembers };
+            });
+        }
+
         res.json({ success: true, data: projects });
     } catch (error) {
         next(error);
@@ -43,6 +60,22 @@ const getMyProjects = async (req, res, next) => {
                 `, [userId]);
                 projects = rows.map(r => new Project(r));
             }
+        }
+
+        if (projects && projects.length > 0) {
+            const projectIds = projects.map(p => p.id);
+            const placeholders = projectIds.map(() => '?').join(',');
+            const [members] = await db.execute(`
+                SELECT pm.project_id, pm.role, u.id as user_id, u.username, u.email, u.avatar 
+                FROM prj_mb pm 
+                JOIN users u ON pm.user_id = u.id 
+                WHERE pm.project_id IN (${placeholders})
+            `, projectIds);
+            
+            projects = projects.map(p => {
+                const pMembers = members.filter(m => m.project_id === p.id);
+                return { ...p, members: pMembers };
+            });
         }
 
         res.json({ success: true, data: projects });
